@@ -1,4 +1,57 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Serif:ital,opsz,wght@0,8..144,100..900;1,8..144,100..900&display=swap');
+.arimo {
+  font-family: arimo;
+}
+.lora{
+  font-family: lora;
+}
+.mono {
+  font-family: roboto-serif;
+}
+
+
+.basker {
+  font-family: "Libre Baskerville", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.editor:empty:before {
+  content: "Start writing your novel...";
+  color: #9ca3af; /* Tailwind gray-400 */
+  font-style: italic;
+}
+
+/* Medium-like block styles */
+.editor h1, .editor h2, .editor h3 {
+  font-weight: bold;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.editor p {
+  margin-bottom: 1rem;
+}
+
+.editor blockquote {
+  border-left: 4px solid #d1d5db; /* gray-300 */
+  padding-left: 1rem;
+  font-style: italic;
+  color: #4b5563; /* gray-700 */
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 :root {
   --background: #ffffff;

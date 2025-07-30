@@ -1,115 +1,104 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import React, { useState, useEffect, useCallback } from "react";
+import { client } from "@/src/sanity/lib/client";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const fixedDocId = "novelContentDoc";
+const totalGoal = 70000;
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export default function LiveTextEditor() {
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
 
-export default function Home() {
+  // Load initial data
+  useEffect(() => {
+    async function fetchData() {
+      const doc = await client.getDocument(fixedDocId);
+      if (doc) {
+        setContent(doc.content || "");
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Debounced save
+  const saveToSanity = useCallback(
+    debounce(async (newContent) => {
+      setSaving(true);
+      try {
+        await client
+          .patch(fixedDocId)
+          .set({ content: newContent, title: "Story" }) // Always set title as "Story"
+          .commit({ autoGenerateArrayKeys: true });
+        setLastSaved(new Date().toLocaleTimeString());
+      } catch (err) {
+        console.error("Error saving:", err);
+      }
+      setSaving(false);
+    }, 800),
+    []
+  );
+
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+    saveToSanity(e.target.value);
+  };
+
+  // Word count & progress
+  const wordCount = content.trim()
+    ? content.trim().split(/\s+/).filter(Boolean).length
+    : 0;
+
+  const progress = Math.min((wordCount / totalGoal) * 100, 100);
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div className="min-h-screen flex flex-col">
+      <div className="max-w-6xl min-w-2xl mx-auto py-8 px-4 flex-1">
+        {/* Fixed Title */}
+        <h1 className="w-full opacity-60 text-5xl mb-6 font-mediumBody font-light font-serif">
+          Story
+        </h1>
+
+        {/* Content */}
+        <textarea
+          value={content}
+          onChange={handleContentChange}
+          placeholder="Tell your story..."
+          className="w-full font-serif text-xl font-mediumBody outline-none resize-none min-h-[300px] placeholder-gray-400 leading-relaxed"
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+        {/* Status */}
+        <div className="text-sm text-gray-500 mt-4 font-mediumUI">
+          {saving
+            ? "Saving..."
+            : lastSaved
+            ? `Saved at ${lastSaved}`
+            : "Not saved yet"}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      {/* Bottom Sticky Word Counter + Progress Bar */}
+      <div className="w-full font-serif bg-white px-4 py-3 text-sm font-mediumUI text-gray-600">
+        <div className="flex justify-between mb-2">
+          <span>Word count: {wordCount}</span>
+          <span>Goal: {totalGoal}</span>
+        </div>
+        {/* Progress Bar */}
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-green-500"
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+      </div>
     </div>
   );
+}
+
+// Debounce helper
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
 }
