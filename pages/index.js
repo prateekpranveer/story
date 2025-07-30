@@ -51,10 +51,10 @@ export default function LiveTextEditor() {
   const progress = Math.min((wordCount / totalGoal) * 100, 100);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="max-w-6xl min-w-2xl mx-auto py-8 px-4 flex-1">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Fixed Title */}
-        <h1 className="w-full opacity-60 text-5xl mb-6 font-mediumBody font-light font-serif">
+        <h1 className="w-full text-3xl sm:text-4xl lg:text-5xl mb-4 font-serif font-light text-gray-700">
           Story
         </h1>
 
@@ -63,11 +63,11 @@ export default function LiveTextEditor() {
           value={content}
           onChange={handleContentChange}
           placeholder="Tell your story..."
-          className="w-full font-serif text-xl font-mediumBody outline-none resize-none min-h-[300px] placeholder-gray-400 leading-relaxed"
+          className="w-full font-serif text-base sm:text-lg lg:text-xl leading-relaxed outline-none resize-none min-h-[300px] sm:min-h-[400px] mt-4 placeholder-gray-400"
         />
 
         {/* Status */}
-        <div className="text-sm text-gray-500 mt-4 font-mediumUI">
+        <div className="text-xs sm:text-sm text-gray-500 mt-3 font-mediumUI">
           {saving
             ? "Saving..."
             : lastSaved
@@ -77,15 +77,15 @@ export default function LiveTextEditor() {
       </div>
 
       {/* Bottom Sticky Word Counter + Progress Bar */}
-      <div className="w-full font-serif bg-white px-4 py-3 text-sm font-mediumUI text-gray-600">
-        <div className="flex justify-between mb-2">
+      <div className="w-full bg-white px-4 sm:px-6 lg:px-8 py-3 shadow-md">
+        <div className="flex flex-col sm:flex-row justify-between mb-2 text-xs sm:text-sm text-gray-600">
           <span>Word count: {wordCount}</span>
           <span>Goal: {totalGoal}</span>
         </div>
         {/* Progress Bar */}
         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-green-500"
+            className="h-full bg-green-500 transition-all duration-300"
             style={{ width: `${progress}%` }}
           ></div>
         </div>
