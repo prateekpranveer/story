@@ -1,21 +1,24 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Roboto+Serif:ital,opsz,wght@0,8..144,100..900;1,8..144,100..900&display=swap');
-.arimo {
-  font-family: arimo;
-}
-.lora{
-  font-family: lora;
-}
-.mono {
-  font-family: roboto-serif;
-}
 
 
-.basker {
-  font-family: "Libre Baskerville", serif;
-  font-weight: 400;
-  font-style: normal;
-}
+ .sidebar-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  .sidebar-btn:hover {
+    background: rgba(100, 100, 100, 0.1);
+  }
+
 
 .editor:empty:before {
   content: "Start writing your novel...";
@@ -40,8 +43,6 @@
   font-style: italic;
   color: #4b5563; /* gray-700 */
 }
-
-
 
 
 
