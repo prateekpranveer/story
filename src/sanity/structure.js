@@ -1,12 +1,11 @@
+// /desk/structure.js
 export const structure = (S) =>
   S.list()
     .title('Novel Writing App')
     .items([
-      // Show Novel Content documents
-      S.documentTypeListItem('novelContent').title('Novel Content'),
+      S.documentTypeListItem('novelContent').title('All Articles'),
       S.divider(),
-      // Show any other document types, if they exist
       ...S.documentTypeListItems().filter(
-        (item) => item.getId() && !['novelContent'].includes(item.getId())
+        (item) => item.getId() && item.getId() !== 'novelContent'
       ),
     ]);
