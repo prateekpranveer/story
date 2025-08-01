@@ -15,6 +15,7 @@
     "medium-editor": "^5.23.3",
     "next": "15.4.5",
     "next-sanity": "^10.0.6",
+    "openai": "^5.11.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "sanity": "^4.2.0",

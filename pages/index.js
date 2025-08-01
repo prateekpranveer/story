@@ -15,6 +15,7 @@ export default function LiveTextEditor() {
 
   const editorRef = useRef(null);
 
+  // Fetch articles list
   useEffect(() => {
     async function fetchArticles() {
       const result = await client.fetch(
@@ -26,6 +27,7 @@ export default function LiveTextEditor() {
     fetchArticles();
   }, []);
 
+  // Fetch content of selected article
   useEffect(() => {
     async function fetchContent() {
       if (!selectedId) return;
@@ -37,6 +39,7 @@ export default function LiveTextEditor() {
     fetchContent();
   }, [selectedId]);
 
+  // Save to Sanity
   const saveToSanity = useCallback(
     debounce(async (htmlContent, newTitle) => {
       if (!selectedId) return;
@@ -55,18 +58,21 @@ export default function LiveTextEditor() {
     [selectedId]
   );
 
+  // Handle input change
   const handleInput = () => {
     const html = editorRef.current.innerHTML;
     setContent(html);
     saveToSanity(html, title);
   };
 
+  // Handle title change
   const handleTitleChange = (e) => {
     const newTitle = e.target.value;
     setTitle(newTitle);
     saveToSanity(content, newTitle);
   };
 
+  // Formatting functions
   const format = (cmd, value = null) => document.execCommand(cmd, false, value);
 
   const createLink = () => {
@@ -83,6 +89,12 @@ export default function LiveTextEditor() {
     }
   };
 
+  // **New**: Highlight text with chosen color
+  const highlightText = (color) => {
+    document.execCommand("backColor", false, color);
+  };
+
+  // Create a new article
   const createNewArticle = async () => {
     const doc = await client.create({
       _type: "novelContent",
@@ -94,18 +106,17 @@ export default function LiveTextEditor() {
   };
 
   const wordCount = content
-    ? content
-        .replace(/<[^>]+>/g, "")
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean).length
+    ? content.replace(/<[^>]+>/g, "").trim().split(/\s+/).filter(Boolean).length
     : 0;
   const progress = Math.min((wordCount / totalGoal) * 100, 100);
 
   return (
     <div
-      className={`flex min-h-screen transition-all duration-500 ease-in-out ${darkMode ? "bg-gray-900 text-white" : "bg-slate-100 text-black"} font-serif`}
+      className={`flex min-h-screen transition-all duration-500 ease-in-out ${
+        darkMode ? "bg-gray-900 text-white" : "bg-slate-100 text-black"
+      } font-serif`}
     >
+      {/* Toggle Sidebar */}
       <button
         onClick={() => setShowArticlesSidebar(!showArticlesSidebar)}
         className="absolute top-2 right-2 z-50 bg-gray-300 dark:bg-gray-700 text-xs px-2 py-1 rounded shadow transition-transform duration-300 hover:scale-110"
@@ -113,9 +124,13 @@ export default function LiveTextEditor() {
         {showArticlesSidebar ? "▶" : "More Articles"}
       </button>
 
+      {/* Toolbar */}
       <div
-        className={`sticky top-0 h-screen w-14 flex flex-col items-center gap-2 py-4 px-1 shadow-md z-10 transition-all duration-500 ease-in-out ${darkMode ? "bg-gray-800" : "bg-white"}`}
+        className={`sticky top-0 h-screen w-14 flex flex-col items-center gap-2 py-4 px-1 shadow-md z-10 transition-all duration-500 ease-in-out ${
+          darkMode ? "bg-gray-800" : "bg-white"
+        }`}
       >
+        {/* Text formatting buttons */}
         {[
           { label: "B", cmd: "bold" },
           { label: "I", cmd: "italic" },
@@ -138,6 +153,21 @@ export default function LiveTextEditor() {
             {label}
           </button>
         ))}
+
+        {/* New Highlight color buttons */}
+        <div className="flex flex-col gap-1 mt-2">
+          {["#fcd34d", "#f87171", "#60a5fa", "#34d399"].map((color) => (
+            <button
+              key={color}
+              onClick={() => highlightText(color)}
+              className="w-6 h-6 rounded-full border border-gray-300"
+              style={{ backgroundColor: color }}
+              title={`Highlight ${color}`}
+            ></button>
+          ))}
+        </div>
+
+        {/* Dark mode toggle */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="sidebar-btn mt-auto text-xs"
@@ -147,6 +177,7 @@ export default function LiveTextEditor() {
         </button>
       </div>
 
+      {/* Main editor */}
       <div className="flex-grow w-full px-6 pt-12 pb-12 max-w-5xl mx-auto transition-opacity duration-500 ease-in-out">
         <input
           type="text"
@@ -155,20 +186,38 @@ export default function LiveTextEditor() {
           placeholder="Enter title..."
           className="w-full text-3xl font-light font-serif bg-transparent mb-4 outline-none"
         />
+
+        {/* Editable editor */}
         <div
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          className="min-h-[300px] text-lg leading-relaxed outline-none prose max-w-none font-serif [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:underline [&_a]:hover:cursor-pointer [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-4 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:mb-4 [&_.bash-block]:bg-gray-800 [&_.bash-block]:text-green-400 [&_.bash-block]:font-mono [&_.bash-block]:p-3 [&_.bash-block]:rounded-lg"
+          className="min-h-[300px] text-lg leading-relaxed outline-none prose max-w-none font-serif
+            [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:underline [&_a]:hover:cursor-pointer 
+            [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-4 
+            [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-3 
+            [&_h3]:text-xl [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 
+            [&_p]:mb-4 [&_.bash-block]:bg-gray-800 [&_.bash-block]:text-green-400 
+            [&_.bash-block]:font-mono [&_.bash-block]:p-3 [&_.bash-block]:rounded-lg"
           style={{ whiteSpace: "pre-wrap", wordWrap: "break-word", padding: "8px 0" }}
         ></div>
+
         <div className="mt-3 text-sm text-gray-500 dark:text-gray-300">
-          {saving ? "Saving..." : lastSaved ? `✅ Saved at ${lastSaved}` : "Not saved yet"}
+          {saving
+            ? "Saving..."
+            : lastSaved
+            ? `✅ Saved at ${lastSaved}`
+            : "Not saved yet"}
         </div>
       </div>
 
+      {/* Sidebar with articles */}
       <div
-        className={`transition-all duration-500 px-4 py-4 ease-in-out ${showArticlesSidebar ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"} overflow-hidden border-l px-3 py-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}
+        className={`transition-all duration-500 px-4 py-4 ease-in-out ${
+          showArticlesSidebar ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"
+        } overflow-hidden border-l px-3 py-4 ${
+          darkMode ? "bg-gray-800" : "bg-white"
+        }`}
       >
         <h2 className="font-bold text-lg mb-3">Articles</h2>
         <button
@@ -187,7 +236,11 @@ export default function LiveTextEditor() {
               <div
                 key={a._id}
                 onClick={() => setSelectedId(a._id)}
-                className={`cursor-pointer px-2 py-2 font-mono rounded hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedId === a._id ? "bg-gray-100 dark:bg-gray-700 font-semibold" : ""} ${reachedGoal ? "text-green-600" : "text-red-600"}`}
+                className={`cursor-pointer px-2 py-2 font-mono rounded hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                  selectedId === a._id
+                    ? "bg-gray-100 dark:bg-gray-700 font-semibold"
+                    : ""
+                } ${reachedGoal ? "text-green-600" : "text-red-600"}`}
               >
                 {a.title || "Untitled"}
               </div>
@@ -196,8 +249,17 @@ export default function LiveTextEditor() {
         </div>
       </div>
 
-      <div className={`fixed bottom-0 left-14 right-0 px-4 py-3 shadow-md transition-all duration-500 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-        <div className={`max-w-5xl mx-auto pr-${showArticlesSidebar ? "64" : "4"} transition-all duration-500`}>
+      {/* Word count tracker */}
+      <div
+        className={`fixed bottom-0 left-14 right-0 px-4 py-3 shadow-md transition-all duration-500 ${
+          darkMode ? "bg-gray-800" : "bg-white"
+        }`}
+      >
+        <div
+          className={`max-w-5xl mx-auto pr-${
+            showArticlesSidebar ? "64" : "4"
+          } transition-all duration-500`}
+        >
           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
             <span>Word count: {wordCount}</span>
             <span>Goal: {totalGoal}</span>
@@ -214,6 +276,7 @@ export default function LiveTextEditor() {
   );
 }
 
+// Debounce utility
 function debounce(fn, delay) {
   let timer;
   return (...args) => {
