@@ -20,7 +20,7 @@ export default function LiveTextEditor() {
   useEffect(() => {
     async function fetchArticles() {
       const result = await client.fetch(
-        `*[_type == "novelContent"]{_id, title, content}`
+        `*[_type == "novelContent"]{_id, title, content, completed}`
       );
       setArticles(result);
       if (result.length > 0) setSelectedId(result[0]._id);
@@ -71,7 +71,21 @@ export default function LiveTextEditor() {
     saveToSanity(content, newTitle);
   };
 
-  // Custom format function
+  // Toggle completed
+  const toggleCompleted = async (id, currentStatus) => {
+    try {
+      await client.patch(id).set({ completed: !currentStatus }).commit();
+      setArticles((prev) =>
+        prev.map((a) =>
+          a._id === id ? { ...a, completed: !currentStatus } : a
+        )
+      );
+    } catch (error) {
+      console.error("Error updating completed status:", error);
+    }
+  };
+
+  // Format function for toolbar commands
   const format = (cmd, value = null) => {
     if (cmd === "insertUnorderedList" || cmd === "insertOrderedList") {
       const selection = window.getSelection();
@@ -79,26 +93,23 @@ export default function LiveTextEditor() {
 
       const range = selection.getRangeAt(0);
 
-      // Find bold element
       const boldEl = range.startContainer.parentElement.closest(
         "b, strong, span[style*='background-color']"
       );
       if (boldEl) {
-        // Wrap bold in <li>
         if (!boldEl.closest("li")) {
           const li = document.createElement("li");
           boldEl.parentNode.insertBefore(li, boldEl);
           li.appendChild(boldEl);
         }
       }
-
       document.execCommand(cmd, false, value);
     } else {
       document.execCommand(cmd, false, value);
     }
   };
 
-  // Backspace behavior for list
+  // Handle backspace in lists
   const handleKeyDown = (e) => {
     if (e.key === "Backspace") {
       const selection = window.getSelection();
@@ -117,11 +128,13 @@ export default function LiveTextEditor() {
     }
   };
 
+  // Insert link
   const createLink = () => {
     const url = prompt("Enter a URL (include https://):");
     if (url) document.execCommand("createLink", false, url);
   };
 
+  // Insert Bash block
   const insertBashBlock = () => {
     document.execCommand("formatBlock", false, "pre");
     const sel = window.getSelection();
@@ -131,7 +144,7 @@ export default function LiveTextEditor() {
     }
   };
 
-  // Highlight text toggle
+  // Highlight text
   const highlightText = (color) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
@@ -146,11 +159,13 @@ export default function LiveTextEditor() {
     }
   };
 
+  // Create new article
   const createNewArticle = async () => {
     const doc = await client.create({
       _type: "novelContent",
       title: "Untitled",
       content: "",
+      completed: false,
     });
     setArticles((prev) => [...prev, doc]);
     setSelectedId(doc._id);
@@ -176,7 +191,7 @@ export default function LiveTextEditor() {
         onClick={() => setShowArticlesSidebar(!showArticlesSidebar)}
         className="absolute top-2 right-2 z-50 bg-gray-300 dark:bg-gray-700 text-xs px-2 py-1 rounded shadow transition-transform duration-300 hover:scale-110"
       >
-        {showArticlesSidebar ? "▶" : <AddIcon fontSize={32}/>}
+        {showArticlesSidebar ? "▶" : <AddIcon fontSize={32} />}
       </button>
 
       {/* Toolbar */}
@@ -210,19 +225,16 @@ export default function LiveTextEditor() {
 
         {/* Highlight Colors */}
         <div className="flex flex-col gap-1 mt-2">
-          {["#fcd34d", "#fda271ff", "#60a5fa", "#60e759ff"].map((color) => (
+          {["#fcd34d", "#fda271ff", "#60a5fa", "#60e759ff","#00000000"].map((color) => (
             <button
               key={color}
               onClick={() => highlightText(color)}
-              className="w-6 h-6 rounded-full border border-gray-300"
+              className="w-6 h-6 rounded-full border border-gray-600"
               style={{ backgroundColor: color }}
               title={`Highlight ${color}`}
             ></button>
           ))}
         </div>
-
-        {/* Dark Mode Toggle */}
-        
       </div>
 
       {/* Main Editor */}
@@ -279,14 +291,30 @@ export default function LiveTextEditor() {
             return (
               <div
                 key={a._id}
-                onClick={() => setSelectedId(a._id)}
-                className={`cursor-pointer px-2 py-2 font-mono rounded hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                className={`flex items-center justify-between px-2 py-2 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
                   selectedId === a._id
                     ? "bg-gray-100 dark:bg-gray-700 font-semibold"
                     : ""
-                } ${reachedGoal ? "text-green-600" : "text-red-600"}`}
+                }`}
               >
-                {a.title || "Untitled"}
+                <span
+                  onClick={() => setSelectedId(a._id)}
+                  className={`${
+                    reachedGoal ? "text-green-600" : "text-red-600"
+                  } ${a.completed ? "line-through text-gray-400" : ""}`}
+                >
+                  {a.title || "Untitled"}
+                </span>
+                <button
+                  onClick={() => toggleCompleted(a._id, a.completed)}
+                  className={`text-xs px-2 py-1 rounded ${
+                    a.completed
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-300 text-black"
+                  }`}
+                >
+                  {a.completed ? "✓" : "○"}
+                </button>
               </div>
             );
           })}
@@ -300,7 +328,6 @@ export default function LiveTextEditor() {
         }`}
       >
         <div className="w-full mx-auto flex flex-col gap-2">
-          {/* Top row: word count, goal, saving status */}
           <div className="w-full h-[6px] bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-sky-800 transition-all duration-300 ease-in-out"
@@ -314,27 +341,25 @@ export default function LiveTextEditor() {
             </div>
             <div className="text-right flex gap-4">
               <div>
-              {saving ? (
-                <span className="text-gray-500 font-medium">Saving...</span>
-              ) : lastSaved ? (
-                <span className="text-green-700 font-medium">
-                  ✅ Saved at {lastSaved}
-                </span>
-              ) : (
-                <span className="text-gray-400">Not saved yet</span>
-              )}
+                {saving ? (
+                  <span className="text-gray-500 font-medium">Saving...</span>
+                ) : lastSaved ? (
+                  <span className="text-green-700 font-medium">
+                    ✅ Saved at {lastSaved}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">Not saved yet</span>
+                )}
               </div>
               <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="mt-auto text-xs border rounded-md cursor-pointer"
-          title="Toggle Dark Mode"
-        >
-          {darkMode ? "☀️" : "🌙"}
-        </button>
+                onClick={() => setDarkMode(!darkMode)}
+                className="mt-auto text-xs border rounded-md cursor-pointer"
+                title="Toggle Dark Mode"
+              >
+                {darkMode ? "☀️" : "🌙"}
+              </button>
             </div>
           </div>
-
-          {/* Progress bar */}
         </div>
       </div>
     </div>
